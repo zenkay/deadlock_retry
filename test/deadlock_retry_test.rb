@@ -1,20 +1,10 @@
-begin
-  require 'active_record'
-rescue LoadError
-  if ENV['ACTIVERECORD_PATH'].nil?
-    abort <<MSG
-Please set the ACTIVERECORD_PATH environment variable to the directory
-containing the active_record.rb file.
-MSG
-  else
-    $LOAD_PATH.unshift << ENV['ACTIVERECORD_PATH']
-    begin
-      require 'active_record'
-    rescue LoadError
-      abort "ActiveRecord could not be found."
-    end
-  end
-end
+require 'rubygems'
+
+# Change the version if you want to test a different version of ActiveRecord
+gem 'activerecord', '2.1.1'
+require 'active_record'
+require 'active_record/version'
+puts "Testing ActiveRecord #{ActiveRecord::VERSION::STRING}"
 
 require 'test/unit'
 require "#{File.dirname(__FILE__)}/../lib/deadlock_retry"
