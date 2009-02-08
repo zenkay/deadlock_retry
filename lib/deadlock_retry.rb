@@ -44,16 +44,39 @@ module DeadlockRetry
       begin
         transaction_without_deadlock_handling(*objects, &block)
       rescue ActiveRecord::StatementInvalid => error
-        raise unless connection.open_transactions.zero?
+        raise if in_nested_transaction?
         if DEADLOCK_ERROR_MESSAGES.any? { |msg| error.message =~ /#{Regexp.escape(msg)}/ }
           raise if retry_count >= MAXIMUM_RETRIES_ON_DEADLOCK
           retry_count += 1
           logger.info "Deadlock detected on retry #{retry_count}, restarting transaction"
+          log_innodb_status
           retry
         else
           raise
         end
       end
     end
+
+    private
+
+    def in_nested_transaction?
+      cn = connection
+      # open_transactions was added in 2.2's connection pooling changes.
+      cn.respond_to?(:open_transactions) && cn.open_transactions != 0
+    end
+
+    def log_innodb_status
+      # show innodb status is the only way to get visiblity into why
+      # the transaction deadlocked.  log it.
+      lines = connection.select_value("show innodb status")
+      logger.warn "INNODB Status follows:"
+      lines.each_line do |line|
+        logger.warn line
+      end
+    rescue Exception => e
+      # Access denied, ignore
+      logger.warn "Cannot log innodb status: #{e.message}"
+    end
+
   end
 end
