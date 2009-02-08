@@ -1,7 +1,7 @@
 require 'rubygems'
 
 # Change the version if you want to test a different version of ActiveRecord
-gem 'activerecord', '2.1.1'
+gem 'activerecord', '2.2.2'
 require 'active_record'
 require 'active_record/version'
 puts "Testing ActiveRecord #{ActiveRecord::VERSION::STRING}"
@@ -64,6 +64,10 @@ class DeadlockRetryTest < Test::Unit::TestCase
     assert_raise(ActiveRecord::StatementInvalid) do
       MockModel.transaction { raise ActiveRecord::StatementInvalid, "Something else" }
     end
+  end
+
+  def test_included_by_default
+    assert ActiveRecord::Base.respond_to?(:transaction_with_deadlock_handling)
   end
 
   def test_error_in_nested_transaction_should_retry_outermost_transaction

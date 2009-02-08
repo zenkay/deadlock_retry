@@ -19,13 +19,12 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 module DeadlockRetry
-  def self.append_features(base)
-    super
+
+  def self.included(base)
     base.extend(ClassMethods)
     base.class_eval do
-      class <<self
-        alias_method :transaction_without_deadlock_handling, :transaction
-        alias_method :transaction, :transaction_with_deadlock_handling
+      class << self
+        alias_method_chain :transaction, :deadlock_handling
       end
     end
   end
@@ -80,3 +79,5 @@ module DeadlockRetry
 
   end
 end
+
+ActiveRecord::Base.send(:include, DeadlockRetry)
