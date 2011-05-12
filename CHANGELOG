@@ -1,5 +1,10 @@
 deadlock_retry changes
 
+== v1.1.0 (2011-04-20)
+
+* Modernize.
+* Drop support for Rails 2.1 and earlier.
+
 == v1.0 - (2009-02-07)
 
 * Add INNODB status logging for debugging deadlock issues.

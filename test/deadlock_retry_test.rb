@@ -1,13 +1,14 @@
 require 'rubygems'
 
 # Change the version if you want to test a different version of ActiveRecord
-gem 'activerecord', '2.3.8'
+gem 'activerecord', '3.0.7'
 require 'active_record'
 require 'active_record/version'
 puts "Testing ActiveRecord #{ActiveRecord::VERSION::STRING}"
 
 require 'test/unit'
-require "#{File.dirname(__FILE__)}/../lib/deadlock_retry"
+require 'logger'
+require "deadlock_retry"
 
 class MockModel
   @@open_transactions = 0
