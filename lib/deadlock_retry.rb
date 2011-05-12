@@ -20,6 +20,11 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 module DeadlockRetry
 
+  # Should we try to log innodb status -- if we don't have permission to,
+  # we actually break in-flight transactions, silently (!)
+  mattr_accessor :log_innodb_status
+  self.log_innodb_status = false
+
   def self.included(base)
     base.extend(ClassMethods)
     base.class_eval do
@@ -48,7 +53,7 @@ module DeadlockRetry
           raise if retry_count >= MAXIMUM_RETRIES_ON_DEADLOCK
           retry_count += 1
           logger.info "Deadlock detected on retry #{retry_count}, restarting transaction"
-          log_innodb_status
+          log_innodb_status if DeadlockRetry.log_innodb_status
           retry
         else
           raise

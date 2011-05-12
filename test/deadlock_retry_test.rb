@@ -1,7 +1,7 @@
 require 'rubygems'
 
 # Change the version if you want to test a different version of ActiveRecord
-gem 'activerecord', '2.2.2'
+gem 'activerecord', '2.3.8'
 require 'active_record'
 require 'active_record/version'
 puts "Testing ActiveRecord #{ActiveRecord::VERSION::STRING}"
@@ -32,11 +32,28 @@ class MockModel
   end
 
   include DeadlockRetry
+
+  def self.log_innodb_status
+    @logged = true
+  end
+
+  def self.was_logged
+    @logged
+  end
+
+  def self.clear_was_logged
+    @logged = false
+  end
 end
 
 class DeadlockRetryTest < Test::Unit::TestCase
   DEADLOCK_ERROR = "MySQL::Error: Deadlock found when trying to get lock"
   TIMEOUT_ERROR = "MySQL::Error: Lock wait timeout exceeded"
+
+  def setup
+    DeadlockRetry.log_innodb_status = false
+    MockModel.clear_was_logged
+  end
 
   def test_no_errors
     assert_equal :success, MockModel.transaction { :success }
@@ -83,7 +100,20 @@ class DeadlockRetryTest < Test::Unit::TestCase
         end
       end
     end
-  
+
     assert_equal 4, tries
+  end
+
+  def test_should_not_log_innodb_by_default
+    errors = [ DEADLOCK_ERROR ] * 3
+    MockModel.transaction { raise ActiveRecord::StatementInvalid, errors.shift unless errors.empty?;}
+    assert !MockModel.was_logged
+  end
+
+  def test_should_log_if_logging_enabled
+    errors = [ DEADLOCK_ERROR ] * 3
+    DeadlockRetry.log_innodb_status = true
+    MockModel.transaction { raise ActiveRecord::StatementInvalid, errors.shift unless errors.empty?;}
+    assert MockModel.was_logged
   end
 end
