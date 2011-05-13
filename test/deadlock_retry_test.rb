@@ -32,19 +32,15 @@ class MockModel
     @logger ||= Logger.new(nil)
   end
 
+  def self.show_innodb_status
+    []
+  end
+
+  def self.reset_innodb_status_availability
+    DeadlockRetry.innodb_status_availability = nil
+  end
+
   include DeadlockRetry
-
-  def self.log_innodb_status
-    @logged = true
-  end
-
-  def self.was_logged
-    @logged
-  end
-
-  def self.clear_was_logged
-    @logged = false
-  end
 end
 
 class DeadlockRetryTest < Test::Unit::TestCase
@@ -52,8 +48,6 @@ class DeadlockRetryTest < Test::Unit::TestCase
   TIMEOUT_ERROR = "MySQL::Error: Lock wait timeout exceeded"
 
   def setup
-    DeadlockRetry.log_innodb_status = false
-    MockModel.clear_was_logged
   end
 
   def test_no_errors
@@ -88,6 +82,13 @@ class DeadlockRetryTest < Test::Unit::TestCase
     assert ActiveRecord::Base.respond_to?(:transaction_with_deadlock_handling)
   end
 
+  def test_innodb_status_availability
+    DeadlockRetry.innodb_status_available = nil
+    MockModel.transaction {}
+    assert_equal true, DeadlockRetry.innodb_status_available?
+  end
+
+
   def test_error_in_nested_transaction_should_retry_outermost_transaction
     tries = 0
     errors = 0
@@ -103,18 +104,5 @@ class DeadlockRetryTest < Test::Unit::TestCase
     end
 
     assert_equal 4, tries
-  end
-
-  def test_should_not_log_innodb_by_default
-    errors = [ DEADLOCK_ERROR ] * 3
-    MockModel.transaction { raise ActiveRecord::StatementInvalid, errors.shift unless errors.empty?;}
-    assert !MockModel.was_logged
-  end
-
-  def test_should_log_if_logging_enabled
-    errors = [ DEADLOCK_ERROR ] * 3
-    DeadlockRetry.log_innodb_status = true
-    MockModel.transaction { raise ActiveRecord::StatementInvalid, errors.shift unless errors.empty?;}
-    assert MockModel.was_logged
   end
 end
