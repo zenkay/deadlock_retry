@@ -62,7 +62,7 @@ module DeadlockRetry
     # Should we try to log innodb status -- if we don't have permission to,
     # we actually break in-flight transactions, silently (!)
     def check_innodb_status_available
-      return unless DeadlockRetry.innodb_status_available?.nil?
+      return unless DeadlockRetry.innodb_status_available? == nil
 
       begin
         show_innodb_status
