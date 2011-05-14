@@ -1,6 +1,6 @@
 deadlock_retry changes
 
-== v1.1.1 (unreleased)
+== v1.1.1 (2011-05-13)
 
 * Conditionally log INNODB STATUS only if user has permission. (osheroff)
 
