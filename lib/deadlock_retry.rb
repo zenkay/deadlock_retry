@@ -41,6 +41,7 @@ module DeadlockRetry
           retry_count += 1
           logger.info "Deadlock detected on retry #{retry_count}, restarting transaction"
           log_innodb_status if DeadlockRetry.innodb_status_available?
+          exponential_pause(retry_count)
           retry
         else
           raise
@@ -49,6 +50,15 @@ module DeadlockRetry
     end
 
     private
+
+    WAIT_TIMES = [0, 1, 2, 4, 8, 16, 32]
+
+    def exponential_pause(count)
+      sec = WAIT_TIMES[count-1] || 32
+      # sleep 0, 1, 2, 4, ... seconds up to the MAXIMUM_RETRIES.
+      # Cap the pause time at 32 seconds.
+      sleep(sec) if sec != 0
+    end
 
     def in_nested_transaction?
       # open_transactions was added in 2.2's connection pooling changes.

@@ -7,6 +7,7 @@ require 'active_record/version'
 puts "Testing ActiveRecord #{ActiveRecord::VERSION::STRING}"
 
 require 'test/unit'
+require 'mocha'
 require 'logger'
 require "deadlock_retry"
 
@@ -48,6 +49,7 @@ class DeadlockRetryTest < Test::Unit::TestCase
   TIMEOUT_ERROR = "MySQL::Error: Lock wait timeout exceeded"
 
   def setup
+    MockModel.stubs(:exponential_pause)
   end
 
   def test_no_errors
