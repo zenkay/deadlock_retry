@@ -1,4 +1,7 @@
 module DeadlockRetry
+
+  VERSION = '1.1.2'
+
   def self.included(base)
     base.extend(ClassMethods)
     base.class_eval do
@@ -98,4 +101,4 @@ module DeadlockRetry
   end
 end
 
-ActiveRecord::Base.send(:include, DeadlockRetry)
+ActiveRecord::Base.send(:include, DeadlockRetry) if defined?(ActiveRecord)

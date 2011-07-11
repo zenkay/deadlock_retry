@@ -1,8 +1,10 @@
 # -*- encoding: utf-8 -*-
 
+require './lib/deadlock_retry'
+
 Gem::Specification.new do |s|
   s.name = %q{deadlock_retry}
-  s.version = "1.1.2"
+  s.version = DeadlockRetry::VERSION
   s.authors = ["Jamis Buck", "Mike Perham"]
   s.description = s.summary = %q{Provides automatic deadlock retry and logging functionality for ActiveRecord and MySQL}
   s.email = %q{mperham@gmail.com}
