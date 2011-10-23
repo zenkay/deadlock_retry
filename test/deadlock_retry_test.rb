@@ -37,8 +37,12 @@ class MockModel
     []
   end
 
-  def self.reset_innodb_status_availability
-    DeadlockRetry.innodb_status_availability = nil
+  def self.execute(sql)
+    [['version', '5.1.45']]
+  end
+
+  def self.select_value(sql)
+    true
   end
 
   include DeadlockRetry
@@ -85,9 +89,9 @@ class DeadlockRetryTest < Test::Unit::TestCase
   end
 
   def test_innodb_status_availability
-    DeadlockRetry.innodb_status_available = nil
+    DeadlockRetry.innodb_status_cmd = nil
     MockModel.transaction {}
-    assert_equal true, DeadlockRetry.innodb_status_available?
+    assert_equal "show innodb status", DeadlockRetry.innodb_status_cmd
   end
 
 

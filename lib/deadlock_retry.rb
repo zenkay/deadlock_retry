@@ -1,3 +1,5 @@
+require 'active_support/core_ext/module/attribute_accessors'
+
 module DeadlockRetry
 
   VERSION = '1.1.2'
@@ -11,15 +13,7 @@ module DeadlockRetry
     end
   end
 
-  @@innodb_status_available = nil
-
-  def self.innodb_status_available?
-    @@innodb_status_available
-  end
-
-  def self.innodb_status_available=(bool)
-    @@innodb_status_available = bool
-  end
+  mattr_accessor :innodb_status_cmd
 
   module ClassMethods
     DEADLOCK_ERROR_MESSAGES = [
@@ -43,7 +37,7 @@ module DeadlockRetry
           raise if retry_count >= MAXIMUM_RETRIES_ON_DEADLOCK
           retry_count += 1
           logger.info "Deadlock detected on retry #{retry_count}, restarting transaction"
-          log_innodb_status if DeadlockRetry.innodb_status_available?
+          log_innodb_status if DeadlockRetry.innodb_status_cmd
           exponential_pause(retry_count)
           retry
         else
@@ -69,19 +63,26 @@ module DeadlockRetry
     end
 
     def show_innodb_status
-       self.connection.select_value("show innodb status")
+       self.connection.select_value(DeadlockRetry.innodb_status_cmd)
     end
 
     # Should we try to log innodb status -- if we don't have permission to,
     # we actually break in-flight transactions, silently (!)
     def check_innodb_status_available
-      return unless DeadlockRetry.innodb_status_available? == nil
+      return unless DeadlockRetry.innodb_status_cmd == nil
 
       begin
-        show_innodb_status
-        DeadlockRetry.innodb_status_available = true
+        mysql_version = self.connection.execute('show variables like \'version\'').to_a[0][1]
+        cmd = if mysql_version < '5.5'
+          'show innodb status'
+        else
+          'show engine innodb status'
+        end
+        self.connection.select_value(cmd)
+        DeadlockRetry.innodb_status_cmd = cmd
       rescue
-        DeadlockRetry.innodb_status_available = false
+        logger.info "Cannot log innodb status: #{$!.message}"
+        DeadlockRetry.innodb_status_cmd = false
       end
     end
 
@@ -93,9 +94,9 @@ module DeadlockRetry
       lines.each_line do |line|
         logger.warn line
       end
-    rescue Exception => e
+    rescue => e
       # Access denied, ignore
-      logger.warn "Cannot log innodb status: #{e.message}"
+      logger.info "Cannot log innodb status: #{e.message}"
     end
 
   end

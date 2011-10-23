@@ -1,8 +1,9 @@
 deadlock_retry changes
 
-== HEAD
+== v1.1.2
 
 * Exponential backoff, sleep 0, 1, 2, 4... seconds between retries.
+* Support new syntax for InnoDB status in MySQL 5.5.
 
 == v1.1.1 (2011-05-13)
 
