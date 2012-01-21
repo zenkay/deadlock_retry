@@ -45,6 +45,10 @@ class MockModel
     true
   end
 
+  def self.adapter_name
+    "MySQL"
+  end
+
   include DeadlockRetry
 end
 
