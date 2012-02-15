@@ -1,5 +1,10 @@
 deadlock_retry changes
 
+== v1.2.0
+
+* Support for postgres (tomhughes)
+* Testing AR versions (kbrock)
+
 == v1.1.2
 
 * Exponential backoff, sleep 0, 1, 2, 4... seconds between retries.
