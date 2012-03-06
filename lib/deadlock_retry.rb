@@ -19,7 +19,7 @@ module DeadlockRetry
       "deadlock detected"
     ]
 
-    MAXIMUM_RETRIES_ON_DEADLOCK = 3
+    MAXIMUM_RETRIES_ON_DEADLOCK = 5
 
 
     def transaction_with_deadlock_handling(*objects, &block)
@@ -37,6 +37,11 @@ module DeadlockRetry
           logger.info "Deadlock detected on retry #{retry_count}, restarting transaction"
           log_innodb_status if DeadlockRetry.innodb_status_cmd
           exponential_pause(retry_count)
+          retry
+        elsif error.message =~ /Duplicate entry .* for key 1.*/
+          raise if retry_count >= MAXIMUM_RETRIES_ON_DEADLOCK
+          retry_count += 1
+          logger.info "#{Time.now} - MySQL 5.0 concurrent insert bug detected on retry #{retry_count}, restarting transaction"
           retry
         else
           raise
