@@ -41,7 +41,7 @@ module DeadlockRetry
         elsif error.message =~ /Duplicate entry .* for key 1.*/
           raise if retry_count >= MAXIMUM_RETRIES_ON_DEADLOCK
           retry_count += 1
-          logger.info "#{Time.now} - MySQL 5.0 concurrent insert bug detected on retry #{retry_count}, restarting transaction"
+          logger.info "MySQL 5.0 concurrent insert bug detected on retry #{retry_count}, restarting transaction"
           retry
         else
           raise
