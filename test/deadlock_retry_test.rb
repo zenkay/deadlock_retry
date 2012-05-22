@@ -55,7 +55,10 @@ end
 class DeadlockRetryTest < Test::Unit::TestCase
   DEADLOCK_ERROR = "MySQL::Error: Deadlock found when trying to get lock"
   TIMEOUT_ERROR = "MySQL::Error: Lock wait timeout exceeded"
-
+  GONE_ERROR = "MySQL::Error: MySQL server has gone away"
+  DUPLICATE_ERROR = "Mysql::Error: Duplicate entry '33' for key 1: UPDATE `ADS` SET `status` = 20 WHERE `id` = 31"
+  GENERIC_DEADLOCK_ERROR = "MySQL::Error: Generic deadlock detected"
+  
   def setup
     MockModel.stubs(:exponential_pause)
   end
@@ -65,13 +68,31 @@ class DeadlockRetryTest < Test::Unit::TestCase
   end
 
   def test_no_errors_with_deadlock
-    errors = [ DEADLOCK_ERROR ] * 3
+    errors = [ DEADLOCK_ERROR ] * 5
     assert_equal :success, MockModel.transaction { raise ActiveRecord::StatementInvalid, errors.shift unless errors.empty?; :success }
     assert errors.empty?
   end
 
   def test_no_errors_with_lock_timeout
-    errors = [ TIMEOUT_ERROR ] * 3
+    errors = [ TIMEOUT_ERROR ] * 5
+    assert_equal :success, MockModel.transaction { raise ActiveRecord::StatementInvalid, errors.shift unless errors.empty?; :success }
+    assert errors.empty?
+  end
+
+  def test_no_errors_with_gone_away
+    errors = [ GONE_ERROR ] * 5
+    assert_equal :success, MockModel.transaction { raise ActiveRecord::StatementInvalid, errors.shift unless errors.empty?; :success }
+    assert errors.empty?
+  end
+
+  def test_no_errors_with_lock_timeout
+    errors = [ DUPLICATE_ERROR ] * 5
+    assert_equal :success, MockModel.transaction { raise ActiveRecord::StatementInvalid, errors.shift unless errors.empty?; :success }
+    assert errors.empty?
+  end
+
+  def test_no_errors_with_generic_deadlock
+    errors = [ GENERIC_DEADLOCK_ERROR ] * 5
     assert_equal :success, MockModel.transaction { raise ActiveRecord::StatementInvalid, errors.shift unless errors.empty?; :success }
     assert errors.empty?
   end
